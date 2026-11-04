@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Editors
+.vs/
+.vscode/
+
+# Node / Vite
+node_modules/
+dist/
+
+# Secrets and local settings
+.env
+.env.local
+appsettings.Development.json
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
