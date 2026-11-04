@@ -11,6 +11,16 @@ A simple inventory admin app.
 - **database/**: `database.sql` (Phase 1 tables and demo data), `phase2.sql` (stock tables and starting stock)
   and `phase3.sql` (purchase order tables and 2 demo POs)
 
+## Screenshots
+
+| Login | Dashboard |
+| ----- | --------- |
+| ![Login page](screenshots/login.png) | ![Dashboard with totals](screenshots/dashboard.png) |
+| **Products** | **Stock** |
+| ![Products list](screenshots/products.png) | ![Stock per warehouse with low stock in red](screenshots/stock.png) |
+| **Movements** | **Purchase Orders** |
+| ![Stock movements list](screenshots/movements.png) | ![Purchase orders list](screenshots/purchase-orders.png) |
+
 ## Requirements
 
 - .NET 10 SDK
