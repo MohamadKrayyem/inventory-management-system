@@ -1,0 +1,7 @@
+bin/
+obj/
+Dockerfile
+.dockerignore
+# Local secrets must never end up in the image
+appsettings.Development.json
+*.user

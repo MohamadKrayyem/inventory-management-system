@@ -10,6 +10,8 @@ A simple inventory admin app.
 - **web/**: React + TypeScript (Vite) using React Router and Axios
 - **database/**: `database.sql` (Phase 1 tables and demo data), `phase2.sql` (stock tables and starting stock)
   and `phase3.sql` (purchase order tables and 2 demo POs)
+- **api.Tests/**: xUnit tests for the stock rules
+- `docker-compose.yml`, `api/Dockerfile`, `web/Dockerfile`, `database/Dockerfile`: run everything with Docker
 
 ## Screenshots
 
@@ -21,7 +23,68 @@ A simple inventory admin app.
 | **Movements** | **Purchase Orders** |
 | ![Stock movements list](screenshots/movements.png) | ![Purchase orders list](screenshots/purchase-orders.png) |
 
-## Requirements
+## Run with Docker
+
+Needs only Docker (Docker Desktop on Windows/macOS). Run these from the `inventory-system` folder.
+
+The first time after cloning, create `.env` from the example (`.env` holds the secrets and is in `.gitignore`):
+
+```
+cp .env.example .env
+```
+
+Open `.env` and replace `MSSQL_SA_PASSWORD` and `JWT_KEY`. Generate a JWT key with:
+
+```
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+```
+
+Then start everything:
+
+```
+docker compose up
+```
+
+- Web app: http://localhost:5173 (log in with a [demo login](#demo-logins))
+- API / Swagger: http://localhost:5000/swagger
+- SQL Server: `localhost,1433`, user `sa`, password from `.env`
+
+On the first run the `db` container creates `InventoryDb` and runs `database.sql`, `phase2.sql` and `phase3.sql`.
+The API starts only after that has finished. Later runs keep the data and skip the seed.
+The web container serves the built React app with nginx and forwards `/api` to the API container.
+
+If a port is already taken, change `WEB_PORT`, `API_PORT` or `DB_PORT` in `.env`.
+
+Other commands:
+
+```
+docker compose up --build    # rebuild after changing code
+docker compose down          # stop (data is kept)
+docker compose down -v       # stop and delete the database; the next "up" seeds it again
+```
+
+## Run tests
+
+Needs the .NET 10 SDK and Docker running. The tests start their own temporary SQL Server container
+(built from the same three scripts), so they never touch your real database or the `docker compose` one.
+
+```
+dotnet test api.Tests
+```
+
+The tests in `api.Tests/StockRulesTests.cs` call the real API (`POST /api/movements`) and check that:
+
+- OUT more than the available stock is rejected (400) and nothing changes
+- TRANSFER to the same warehouse is rejected (400)
+- ADJUST as Staff returns 403 (and works as Admin)
+- stock never goes below 0 (OUT, TRANSFER, ADJUST and the database CHECK constraint)
+- many OUT requests sent at the same moment cannot sell more than is in stock
+
+One test is skipped on purpose: concurrent OUT and TRANSFER requests for the same product can deadlock
+in SQL Server, and the requests that lose get a 500 instead of a 400. Stock is still never oversold.
+The skip reason in the test explains it.
+
+## Requirements (without Docker)
 
 - .NET 10 SDK
 - Node.js 20.19+ (or 22+)

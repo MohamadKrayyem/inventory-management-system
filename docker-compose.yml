@@ -1,0 +1,42 @@
+# docker compose up  ->  web: http://localhost:5173   API/Swagger: http://localhost:5000/swagger
+# Settings come from .env (copy .env.example to .env first).
+
+services:
+  db:
+    build: ./database
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env (copy .env.example to .env)}
+    ports:
+      - "${DB_PORT:-1433}:1433"
+    volumes:
+      - db-data:/var/opt/mssql
+    # Healthy only once the first-run seed has finished
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /var/opt/mssql/.seeded && /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  api:
+    build: ./api
+    environment:
+      ConnectionStrings__Default: ${DB_CONNECTION_STRING:?Set DB_CONNECTION_STRING in .env (copy .env.example to .env)}
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env (copy .env.example to .env)}
+      ClientUrl: http://localhost:${WEB_PORT:-5173}
+    ports:
+      - "${API_PORT:-5000}:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
